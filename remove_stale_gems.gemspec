@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = %q{remove_stale_gems}
-  s.version = "0.0.0"
+  s.version = "0.0.1"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["Boba Fat"]
@@ -14,6 +14,17 @@ Gem::Specification.new do |s|
   s.extra_rdoc_files = [
     "LICENSE",
      "README.rdoc"
+  ]
+  s.files = [
+    ".gitignore",
+     "LICENSE",
+     "README.rdoc",
+     "Rakefile",
+     "VERSION",
+     "lib/remove_stale_gems.rb",
+     "lib/rubygems/commands/remove_stale_command.rb",
+     "lib/rubygems_plugin.rb",
+     "remove_stale_gems.gemspec"
   ]
   s.rdoc_options = ["--charset=UTF-8"]
   s.require_paths = ["lib"]
