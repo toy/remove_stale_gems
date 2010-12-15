@@ -1,28 +1,19 @@
-begin
-  require 'jeweler'
+require 'rake'
+require 'jeweler'
+require 'rake/gem_ghost_task'
 
-  name = 'remove_stale_gems'
-  summary = 'Remove unused gems'
-  description = 'Remove gems for which last use time is too old'
+name = 'remove_stale_gems'
 
-  jewel = Jeweler::Tasks.new do |j|
-    j.name = name
-    j.summary = summary
-    j.description = description
-    j.authors = ['Ivan Kuchin']
-  end
-
-  Jeweler::GemcutterTasks.new
-
-  require 'pathname'
-  desc "Replace system gem with symlink to this folder"
-  task 'ghost' do
-    gem_path = Pathname(Gem.searcher.find(name).full_gem_path)
-    current_path = Pathname('.').expand_path
-    system('rm', '-r', gem_path)
-    system('ln', '-s', current_path, gem_path)
-  end
-
-rescue LoadError
-  puts "Jeweler (or a dependency) not available. Install it with: gem install jeweler"
+Jeweler::Tasks.new do |gem|
+  gem.name = name
+  gem.summary = %Q{Remove unused gems}
+  gem.description = %Q{Remove gems for which last use time is too old}
+  gem.homepage = "http://github.com/toy/#{name}"
+  gem.license = 'MIT'
+  gem.authors = ['Ivan Kuchin']
+  gem.add_development_dependency 'jeweler', '~> 1.5.1'
+  gem.add_development_dependency 'rake-gem-ghost'
+  gem.add_development_dependency 'rspec'
 end
+Jeweler::RubygemsDotOrgTasks.new
+Rake::GemGhostTask.new
