@@ -9,7 +9,7 @@ begin
     j.name = name
     j.summary = summary
     j.description = description
-    j.authors = ["Boba Fat"]
+    j.authors = ['Ivan Kuchin']
   end
 
   Jeweler::GemcutterTasks.new
