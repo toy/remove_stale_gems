@@ -3,50 +3,67 @@ require 'rubygems/uninstaller'
 class Gem::Commands::RemoveStaleCommand < Gem::Command
   def initialize
     super 'remove_stale', 'Remove gems for which last use time is too old'
+
+    add_option('-y', '--yes', 'Don\'t ask for confirmation') do |value, options|
+      options[:yes] = true
+    end
+
+    add_option('-d', '--days DAYS', 'Consider stale after no access for this number of days (Default: 40)') do |value, options|
+      options[:days] = value.to_i
+    end
   end
 
-  def abandoned?(spec, border_time)
-    atime = nil
-    Dir["#{spec.full_gem_path}/**/*.*"].each do |file|
-      next if File.directory?(file)
-      stat = File.stat(file)
-      atime = stat.atime if !atime || atime < stat.atime
-    end
-    atime && atime < border_time
+  def gem_atime(spec)
+    Dir["#{spec.full_gem_path}/**/*.*"].reject do |path|
+      File.directory?(path)
+    end.map do |path|
+      File.stat(path).atime
+    end.max
+  end
+
+  def stale_gem?(spec, border_time)
+    (atime = gem_atime(spec)) && (atime < border_time)
   end
 
   def execute
-    border_time = Time.now - 40 * (24 * 60 * 60)
+    days = options[:days] || 40
+    border_time = Time.now - days  * (24 * 60 * 60)
 
-    abandoned_gems = []
-    Gem.source_index.each do |name, spec|
-      if abandoned?(spec, border_time)
-        abandoned_gems << spec
-      end
+    stale_gems = Gem::Specification.select do |spec|
+      stale_gem?(spec, border_time)
     end
 
-    to_uninstall = abandoned_gems.select do |spec|
+    to_uninstall = stale_gems.select do |spec|
       spec.dependent_gems.all? do |dependent, depency, satlist|
-        abandoned_gems.include?(dependent) || (satlist - abandoned_gems).length > 0
+        stale_gems.include?(dependent) || (satlist - stale_gems).length > 0
       end
     end
 
-    to_uninstall.each do |spec|
-      say "Attempting to uninstall #{spec.full_name}"
+    if to_uninstall.empty?
+      puts 'No stale gems found.'
+    else
+      puts 'Stale gems:'
+      to_uninstall.each do |spec|
+        puts "  #{spec.full_name}"
+      end
+      if options[:yes] || ask_yes_no('Remove gems?')
+        to_uninstall.each do |spec|
+          say "Attempting to uninstall #{spec.full_name}"
 
-      uninstall_options = {
-        :executables => (Gem.source_index.find_name(spec.name) - to_uninstall).length == 0,
-        :version => "= #{spec.version}",
-        :ignore => true
-      }
-      uninstaller = Gem::Uninstaller.new spec.name, uninstall_options
+          uninstall_options = {
+            :executables => (Gem.source_index.find_name(spec.name) - to_uninstall).length == 0,
+            :version => "= #{spec.version}",
+            :ignore => true
+          }
+          uninstaller = Gem::Uninstaller.new spec.name, uninstall_options
 
-      begin
-        uninstaller.uninstall
-      rescue Gem::DependencyRemovalException, Gem::InstallError,
-              Gem::GemNotInHomeException => e
-        say "Unable to uninstall #{spec.full_name}:"
-        say "\t#{e.class}: #{e.message}"
+          begin
+            uninstaller.uninstall
+          rescue Gem::DependencyRemovalException, Gem::InstallError, Gem::GemNotInHomeException => e
+            say "Unable to uninstall #{spec.full_name}:"
+            say "  #{e.class}: #{e.message}"
+          end
+        end
       end
     end
   end
