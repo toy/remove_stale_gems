@@ -49,16 +49,12 @@ class Gem::Commands::RemoveStaleCommand < Gem::Command
       if options[:yes] || ask_yes_no('Remove gems?')
         to_uninstall.each do |spec|
           say "Attempting to uninstall #{spec.full_name}"
-
-          uninstall_options = {
-            :executables => (Gem.source_index.find_name(spec.name) - to_uninstall).length == 0,
-            :version => "= #{spec.version}",
-            :ignore => true
-          }
-          uninstaller = Gem::Uninstaller.new spec.name, uninstall_options
-
           begin
-            uninstaller.uninstall
+            Gem::Uninstaller.new(spec.name, {
+              :version => "= #{spec.version}",
+              :executables => true,
+              :ignore => true
+            }).uninstall
           rescue Gem::DependencyRemovalException, Gem::InstallError, Gem::GemNotInHomeException => e
             say "Unable to uninstall #{spec.full_name}:"
             say "  #{e.class}: #{e.message}"
