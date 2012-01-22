@@ -43,8 +43,15 @@ class Gem::Commands::RemoveStaleCommand < Gem::Command
       puts 'No stale gems found.'
     else
       puts 'Stale gems:'
-      to_uninstall.each do |spec|
-        puts "  #{spec.full_name}"
+      to_uninstall.group_by(&:name).sort.each do |name, specs|
+        all_versions = Gem::Specification.find_all_by_name(name).map(&:version)
+        versions_to_uninstall = specs.map(&:version).sort
+        versions_to_leave = all_versions - versions_to_uninstall
+        line = "  #{name}: #{versions_to_uninstall.join(', ')}"
+        unless versions_to_leave.empty?
+          line << " (leaving versions: #{versions_to_leave.join(', ')})"
+        end
+        puts line
       end
       if options[:yes] || ask_yes_no('Remove gems?')
         to_uninstall.each do |spec|
