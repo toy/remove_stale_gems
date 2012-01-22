@@ -2,7 +2,7 @@
 
 Gem::Specification.new do |s|
   s.name        = 'remove_stale_gems'
-  s.version     = '1.0.1'
+  s.version     = '1.0.2'
   s.summary     = %q{Remove unused gems}
   s.description = %q{Remove gems for which last use time is too old}
   s.homepage    = "http://github.com/toy/#{s.name}"
